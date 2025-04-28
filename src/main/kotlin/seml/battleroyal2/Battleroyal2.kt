@@ -1,8 +1,6 @@
 package seml.battleroyal2
 
 
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.gameMode
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.World
 import org.bukkit.Material
@@ -22,12 +20,12 @@ import org.bukkit.entity.Player
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.ExperienceOrb
-import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockDropItemEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import kotlin.random.Random
 
 
 class Battleroyal2 : JavaPlugin(), Listener {
@@ -45,6 +43,7 @@ class Battleroyal2 : JavaPlugin(), Listener {
             makeSpawn()
         }
 
+        logger.info("플러그인 로드 완료")
     }
 
     override fun onDisable() {
@@ -120,10 +119,9 @@ class Battleroyal2 : JavaPlugin(), Listener {
         world.setSpawnLocation(Location(world, 0.0, 201.0, 0.0))
 
         // 게임룰 바꾸기
-        world.setGameRule(org.bukkit.GameRule.ANNOUNCE_ADVANCEMENTS, false)
-        world.setGameRule(org.bukkit.GameRule.FALL_DAMAGE, false)
         world.worldBorder.center = Location(world, 0.0, 0.0, 0.0)
     }
+
 
     private fun makeSpawn() {
         val world: World = server.getWorld("world") ?: return
@@ -131,22 +129,25 @@ class Battleroyal2 : JavaPlugin(), Listener {
         val baseY = 200
         val baseZ = -15
 
-        for (x in 0 until 30) {
-            for (z in 0 until 30) {
+
+
+
+        for (x in 0 ..30) {
+            for (z in 0 .. 30) {
                 world.getBlockAt(baseX + x, baseY, baseZ + z).type = Material.GRASS_BLOCK
-                world.getBlockAt(baseX + x, baseY + 15, baseZ + z).type = Material.GLASS
+                world.getBlockAt(baseX + x, baseY + 15, baseZ + z).type = Material.LIGHT_GRAY_STAINED_GLASS
             }
         }
 
-        for (i in 0 until 30) {
-            for (j in 0 until 14) {
-                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ - 1).type = Material.GLASS
-                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ + 30).type = Material.GLASS
-                world.getBlockAt(baseX - 1, baseY + 1 + j, baseZ + i).type = Material.GLASS
-                world.getBlockAt(baseX + 30, baseY + 1 + j, baseZ + i).type = Material.GLASS
+        for (i in 0 .. 30) {
+            for (j in 0 .. 13) {
+                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ - 1).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ + 31).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX - 1, baseY + 1 + j, baseZ + i).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + 31, baseY + 1 + j, baseZ + i).type = Material.LIGHT_GRAY_STAINED_GLASS
             }
         }
-        logger.info("대기실 생성 완료!")
+
     }
 
     fun pickaxeTier(material: Material): Int = when (material) {
@@ -201,12 +202,16 @@ class Battleroyal2 : JavaPlugin(), Listener {
         if (victim is Player && isStarted == false) {
             event.isCancelled = true
         }
+        else if (victim is Player && event.cause == EntityDamageEvent.DamageCause.LAVA) {
+            event.isCancelled = true
+        }
     }
     @EventHandler
     fun onBlockDropItem(event: BlockDropItemEvent) {
         val blockState = event.blockState
         val player = event.player
         val item = player.inventory.itemInMainHand
+        val block = event.block
         if (player.gameMode != GameMode.CREATIVE) {
             when (blockState.type) {
                 Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE -> {
@@ -214,10 +219,10 @@ class Battleroyal2 : JavaPlugin(), Listener {
                         // 기존 드롭 제거
                         event.getItems().clear()
                         // 주괴 드롭 (ItemStack → Item으로 변환)
-                        val item = event.block.world.dropItem(event.block.location.add(0.5,0.5,0.5), ItemStack(Material.IRON_INGOT))
+                        val item = block.world.dropItem(block.location.add(0.5,0.5,0.5), ItemStack(Material.IRON_INGOT))
                         event.getItems().add(item)
 
-                        val orb = event.block.world.spawn(event.block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
+                        val orb = block.world.spawn(block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
                         orb.experience = 3 // 철광석은 보통 1-3 경험치
 
                     }
@@ -225,35 +230,40 @@ class Battleroyal2 : JavaPlugin(), Listener {
                 Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE -> {
                     if (pickaxeTier(item.type) >= 3) {
                         event.getItems().clear()
-                        val item = event.block.world.dropItem(event.block.location.add(0.5,0.5,0.5), ItemStack(Material.GOLD_INGOT))
+                        val item = block.world.dropItem(block.location.add(0.5,0.5,0.5), ItemStack(Material.GOLD_INGOT))
                         event.getItems().add(item)
 
-                        val orb = event.block.world.spawn(event.block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
+                        val orb = block.world.spawn(block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
                         orb.experience = 5 // 금광석은 보통 더 많은 경험치
                     }
                 }
                 Material.RAW_IRON_BLOCK -> {
                     if (pickaxeTier(item.type) >= 2) {
                         event.getItems().clear()
-                        val item = event.block.world.dropItem(event.block.location.add(0.5,0.5,0.5), ItemStack(Material.IRON_BLOCK))
+                        val item = block.world.dropItem(block.location.add(0.5,0.5,0.5), ItemStack(Material.IRON_BLOCK))
                         event.getItems().add(item)
 
-                        val orb = event.block.world.spawn(event.block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
+                        val orb = block.world.spawn(block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
                         orb.experience = 9 // 철 원석 블록은 더 많은 경험치
                     }
                 }
                 Material.RAW_GOLD_BLOCK -> {
                     if (pickaxeTier(item.type) >= 3) {
                         event.getItems().clear()
-                        val item = event.block.world.dropItem(event.block.location.add(0.5,0.5,0.5), ItemStack(Material.GOLD_BLOCK))
+                        val item = block.world.dropItem(block.location.add(0.5,0.5,0.5), ItemStack(Material.GOLD_BLOCK))
                         event.getItems().add(item)
 
-                        val orb = event.block.world.spawn(event.block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
+                        val orb = block.world.spawn(block.location.add(0.5, 0.5, 0.5), ExperienceOrb::class.java)
                         orb.experience = 15 // 금 원석 블록은 더 많은 경험치
                     }
                 }
-
                 else -> {}
+            }
+            if (blockState.type.name.endsWith("_LEAVES")) {
+                // 20% 확률로 사과 드롭
+                if (Random.nextDouble() < 0.20) {
+                    block.world.dropItemNaturally(block.location, ItemStack(Material.APPLE))
+                }
             }
         }
     }
