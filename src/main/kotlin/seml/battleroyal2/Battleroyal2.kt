@@ -1,8 +1,6 @@
 package seml.battleroyal2
 
 import BattleroyalTabCompleter
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
@@ -10,7 +8,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
-import kotlin.jvm.java
+import net.kyori.adventure.text.Component
+
 
 class Battleroyal2 : JavaPlugin() {
     var isStarted: Boolean = false
@@ -112,4 +111,25 @@ class Battleroyal2 : JavaPlugin() {
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
     }
 
+    fun changePlayerName(player: Player, nickname: String) {
+        // 탭리스트(탭 메뉴) 닉네임 변경
+        player.playerListName(Component.text(nickname))
+
+        // 머리 위 네임태그(이름표) 변경: Scoreboard Team 활용
+        val scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+        val teamName = "nick_${player.uniqueId.toString().substring(0, 16)}"
+        var team = scoreboard.getTeam(teamName)
+        if (team == null) {
+            team = scoreboard.registerNewTeam(teamName)
+        }
+        // 팀에 플레이어 추가
+        if (!team.hasEntry(player.name)) {
+            team.addEntry(player.name)
+        }
+        // prefix/suffix 없이 닉네임만 표시하려면 prefix에 닉네임을 넣고, 이름은 공백 처리
+        team.prefix = ""
+        team.suffix = ""
+        // 이름표를 닉네임으로 보이게 하려면 displayName 또는 prefix/suffix 활용
+        // (마인크래프트 기본 네임태그 시스템 한계상, 완전히 이름 자체를 바꾸는 건 어렵지만, prefix/suffix로 사실상 대체 가능)
+    }
 }

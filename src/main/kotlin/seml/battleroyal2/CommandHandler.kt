@@ -1,8 +1,5 @@
 package seml.battleroyal2
 
-import com.sun.tools.javac.tree.TreeInfo.args
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -50,16 +47,7 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
 //                    sender.playerListName(Component.text(newNick))
 //                    sender.customName(Component.text(newNick))
 
-//                    val profile = sender.playerProfile
-//                    profile.setName(newNick)
-//                    sender.playerProfile = profile
-
-                    val profile: PlayerProfile = Bukkit.createProfile(sender.uniqueId, newNick)
-
-                    // 프로필을 플레이어에 적용
-                    sender.playerProfile = profile
-                    sender.displayName(Component.text(newNick))
-                    sender.playerListName(Component.text(newNick))
+                      plugin.changePlayerName(sender, newNick)
                 }
 
             } else {
