@@ -3,11 +3,14 @@ package seml.battleroyal2
 import BattleroyalTabCompleter
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
+import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import kotlin.jvm.java
 
 class Battleroyal2 : JavaPlugin() {
     var isStarted: Boolean = false
@@ -102,9 +105,11 @@ class Battleroyal2 : JavaPlugin() {
 
         for (player in server.onlinePlayers) {
             player.gameMode = GameMode.SURVIVAL
+            player.inventory.clear()
             player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
         }
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
     }
+
 }
