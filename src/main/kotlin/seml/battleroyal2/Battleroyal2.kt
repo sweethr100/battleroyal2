@@ -56,7 +56,6 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    // 곡괭이 등급 체크 함수 (다른 클래스에서 사용하려면 public으로)
     fun pickaxeTier(material: org.bukkit.Material): Int = when (material) {
         org.bukkit.Material.WOODEN_PICKAXE -> 1
         org.bukkit.Material.STONE_PICKAXE -> 2
