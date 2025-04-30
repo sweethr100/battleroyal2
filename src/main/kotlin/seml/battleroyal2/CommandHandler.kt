@@ -26,7 +26,7 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                 "start" -> {
                     plugin.startGame(sender)
                 }
-                "makeSpawn" -> {
+                "makespawn" -> {
                     plugin.makeSpawn()
                     sender.sendMessage("대기실이 생성되었습니다.")
                 }

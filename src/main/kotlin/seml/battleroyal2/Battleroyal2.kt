@@ -1,9 +1,12 @@
 package seml.battleroyal2
 
 import BattleroyalTabCompleter
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.command.CommandSender
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 
 class Battleroyal2 : JavaPlugin() {
@@ -86,6 +89,7 @@ class Battleroyal2 : JavaPlugin() {
             for (y in 0 until 16) {
                 for (z in 0 until 33) {
                     world.getBlockAt(baseX + x, baseY + y, baseZ + z).type = org.bukkit.Material.AIR
+
                 }
             }
         }
@@ -98,6 +102,7 @@ class Battleroyal2 : JavaPlugin() {
 
         for (player in server.onlinePlayers) {
             player.gameMode = GameMode.SURVIVAL
+            player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
         }
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
