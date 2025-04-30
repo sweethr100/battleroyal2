@@ -1,5 +1,6 @@
 package seml.battleroyal2
 
+import com.sun.tools.javac.tree.TreeInfo.args
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -16,11 +17,19 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
     ): Boolean {
 
         if (command.name.equals("battleroyal", ignoreCase = true) && sender.isOp) {
-            if (args[0] == "start") {
-                plugin.startGame(sender)
+            if (args.isEmpty()) {
+                sender.sendMessage("사용법: /help battleroyal")
+                return true
             }
-           else if (args[0] == "makeSpawn") {
-               plugin.makeSpawn()
+
+            when (args[0].lowercase()) {
+                "start" -> {
+                    plugin.startGame(sender)
+                }
+                "makeSpawn" -> {
+                    plugin.makeSpawn()
+                    sender.sendMessage("대기실이 생성되었습니다.")
+                }
             }
             return true
         }

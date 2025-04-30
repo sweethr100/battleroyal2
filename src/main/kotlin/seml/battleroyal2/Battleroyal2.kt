@@ -72,7 +72,7 @@ class Battleroyal2 : JavaPlugin() {
         else -> 0
     }
 
-    fun startGame(sender : CommandSender) {
+    fun startGame(sender : CommandSender = server.consoleSender) {
         val world = server.getWorld("world") ?: return
 
         isStarted = !isStarted
