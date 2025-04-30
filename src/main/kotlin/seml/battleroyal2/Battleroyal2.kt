@@ -1,5 +1,6 @@
 package seml.battleroyal2
 
+import BattleroyalTabCompleter
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.GameMode
 import org.bukkit.command.CommandSender
@@ -13,7 +14,9 @@ class Battleroyal2 : JavaPlugin() {
         server.pluginManager.registerEvents(BattleroyalListener(this), this)
         // 커맨드 등록
         getCommand("battleroyal")?.setExecutor(CommandHandler(this))
+        getCommand("battleroyal")?.tabCompleter = BattleroyalTabCompleter()
         getCommand("changenick")?.setExecutor(CommandHandler(this))
+        getCommand("changenick")?.tabCompleter = BattleroyalTabCompleter()
 
         // 설정값 불러오기
         isStarted = config.getBoolean("isStarted", false)

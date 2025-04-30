@@ -16,7 +16,12 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
     ): Boolean {
 
         if (command.name.equals("battleroyal", ignoreCase = true) && sender.isOp) {
-            plugin.startGame(sender)
+            if (args[0] == "start") {
+                plugin.startGame(sender)
+            }
+           else if (args[0] == "makeSpawn") {
+               plugin.makeSpawn()
+            }
             return true
         }
 
@@ -32,9 +37,8 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                     sender.displayName(Component.text(newNick))
                     sender.playerListName(Component.text(newNick))
                     sender.customName(Component.text(newNick))
-                } else {
-                    sender.sendMessage("변경할 닉네임을 입력하세요: /changenick <닉네임 | reset>")
                 }
+
             } else {
                 sender.sendMessage("사용할 수 없는 명령어입니다.")
             }
