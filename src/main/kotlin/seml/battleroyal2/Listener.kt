@@ -57,6 +57,14 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
             event.isCancelled = true
         }
     }
+    @EventHandler
+    fun onFoodLevelChange(event: FoodLevelChangeEvent) {
+        // isStarted가 false면 배고픔이 줄지 않게 막음
+        if (!plugin.isStarted) {
+            event.isCancelled = true
+        }
+    }
+
 
     @EventHandler
     fun onBlockDropItem(event: BlockDropItemEvent) {

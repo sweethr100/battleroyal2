@@ -1,5 +1,6 @@
 package seml.battleroyal2
 
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -13,31 +14,9 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
         label: String,
         args: Array<out String>
     ): Boolean {
-        val world = plugin.server.getWorld("world") ?: return false
 
         if (command.name.equals("battleroyal", ignoreCase = true) && sender.isOp) {
-            plugin.isStarted = !plugin.isStarted
-            plugin.config.set("isStarted", plugin.isStarted)
-            plugin.saveConfig()
-
-            val baseX = -16
-            val baseY = 200
-            val baseZ = -16
-            for (x in 0 until 32) {
-                for (y in 0 until 16) {
-                    for (z in 0 until 32) {
-                        world.getBlockAt(baseX + x, baseY + y, baseZ + z).type = org.bukkit.Material.AIR
-                    }
-                }
-            }
-
-            world.time = 0
-            world.clearWeatherDuration = 20 * 60 * 10
-            world.weatherDuration = 20 * 60 * 10
-            world.thunderDuration = 0
-            world.isThundering = false
-
-            sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${plugin.isStarted})")
+            plugin.startGame(sender)
             return true
         }
 

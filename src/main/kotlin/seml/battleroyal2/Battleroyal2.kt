@@ -1,5 +1,8 @@
 package seml.battleroyal2
 
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
+import org.bukkit.GameMode
+import org.bukkit.command.CommandSender
 import org.bukkit.plugin.java.JavaPlugin
 
 class Battleroyal2 : JavaPlugin() {
@@ -64,5 +67,36 @@ class Battleroyal2 : JavaPlugin() {
         org.bukkit.Material.DIAMOND_PICKAXE -> 4
         org.bukkit.Material.NETHERITE_PICKAXE -> 5
         else -> 0
+    }
+
+    fun startGame(sender : CommandSender) {
+        val world = server.getWorld("world") ?: return
+
+        isStarted = !isStarted
+        config.set("isStarted", isStarted)
+        saveConfig()
+
+        val baseX = -16
+        val baseY = 200
+        val baseZ = -16
+        for (x in 0 until 33) {
+            for (y in 0 until 16) {
+                for (z in 0 until 33) {
+                    world.getBlockAt(baseX + x, baseY + y, baseZ + z).type = org.bukkit.Material.AIR
+                }
+            }
+        }
+
+        world.time = 0
+        world.clearWeatherDuration = 20 * 60 * 10
+        world.weatherDuration = 20 * 60 * 10
+        world.thunderDuration = 0
+        world.isThundering = false
+
+        for (player in server.onlinePlayers) {
+            player.gameMode = GameMode.SURVIVAL
+        }
+
+        sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
     }
 }
