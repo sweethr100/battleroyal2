@@ -30,6 +30,21 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                     plugin.makeSpawn()
                     sender.sendMessage("대기실이 생성되었습니다.")
                 }
+                "addsubteam" -> {
+                    val targetName = args[1]
+                    val targetPlayer = Bukkit.getPlayerExact(targetName)
+                    if (targetPlayer == null) {
+                        sender.sendMessage("해당 닉네임의 플레이어가 온라인이 아닙니다.")
+                        return true
+                    }
+                    if (plugin.subTeam.contains(targetPlayer)) {
+                        sender.sendMessage("이미 SubTeam에 속해 있습니다.")
+                        return true
+                    }
+                    plugin.subTeam.add(targetPlayer)
+                    sender.sendMessage("${targetPlayer.name}님을 SubTeam에 추가했습니다.")
+                    return true
+                }
             }
             return true
         }
@@ -43,10 +58,6 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                     } else {
                         sender.sendMessage("닉네임이 '$newNick'(으)로 변경되었습니다.")
                     }
-//                    sender.displayName(Component.text(newNick))
-//                    sender.playerListName(Component.text(newNick))
-//                    sender.customName(Component.text(newNick))
-
                       plugin.changePlayerName(sender, newNick)
                 }
 

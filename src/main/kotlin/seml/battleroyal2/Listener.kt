@@ -133,7 +133,7 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
     @EventHandler
     fun onPlayerDeath(event: PlayerDeathEvent) {
         val player = event.entity
-        val playerName = player.displayName ?: player.name
+        val playerName = player.playerListName()
         event.deathMessage(Component.text("§c${playerName}이(가) 죽었습니다"))
         if (plugin.isStarted) player.gameMode = GameMode.SPECTATOR
     }

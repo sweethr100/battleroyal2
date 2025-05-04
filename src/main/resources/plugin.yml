@@ -6,7 +6,7 @@ api-version: '1.21'
 commands:
   battleroyal:
     description: 배틀로얄 시작
-    usage: /battleroyal <start|makeSpawn>
+    usage: /battleroyal <start|makeSpawn|addSubTeam>
   changenick:
     description: 플레이어 닉네임 변경
     usage: /changenick <new_nick|reset>

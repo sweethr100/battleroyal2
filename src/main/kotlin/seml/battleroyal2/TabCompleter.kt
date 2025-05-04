@@ -13,7 +13,7 @@ class BattleroyalTabCompleter : TabCompleter {
         if (command.name.equals("battleroyal", ignoreCase = true)) {
             if (args.size == 1) {
                 // 첫 번째 인자에서 탭 누르면 이 리스트가 자동완성 힌트로 표시됨
-                return listOf("start", "makeSpawn").filter { it.startsWith(args[0]) }
+                return listOf("start", "makeSpawn","addSubTeam").filter { it.startsWith(args[0]) }
             }
         }
         else if (command.name.equals("changenick", ignoreCase = true)) {
