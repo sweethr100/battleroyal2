@@ -7,6 +7,8 @@ import org.bukkit.entity.Player
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import com.destroystokyo.paper.profile.PlayerProfile
+import com.sun.tools.javac.tree.TreeInfo.args
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 
 class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
     override fun onCommand(
@@ -26,39 +28,36 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                 "start" -> {
                     plugin.startGame(sender)
                 }
-                "makespawn" -> {
-                    plugin.makeSpawn()
-                    sender.sendMessage("대기실이 생성되었습니다.")
-                }
-                "addsubteam" -> {
-                    val targetName = args[1]
-                    val targetPlayer = Bukkit.getPlayerExact(targetName)
-                    if (targetPlayer == null) {
-                        sender.sendMessage("해당 닉네임의 플레이어가 온라인이 아닙니다.")
-                        return true
-                    }
-                    if (plugin.subTeam.contains(targetPlayer)) {
-                        sender.sendMessage("이미 SubTeam에 속해 있습니다.")
-                        return true
-                    }
-                    plugin.subTeam.add(targetPlayer)
-                    sender.sendMessage("${targetPlayer.name}님을 SubTeam에 추가했습니다.")
-                    return true
-                }
             }
             return true
         }
+        else if (command.name.equals("makeSpawn", ignoreCase = true) && sender.isOp) {
+            if (sender is Player && sender.isOp) {
+                plugin.makeSpawn()
+                sender.sendMessage("대기실이 생성되었습니다.")
+                return true
+            }
+        }
 
-        if (command.name.equals("changenick", ignoreCase = true)) {
+        else if (command.name.equals("addTeam", ignoreCase = true) && sender.isOp) {
+            if (sender is Player && sender.isOp) {
+                if (args.size < 2) {
+                    sender.sendMessage("사용법: /help addTeam")
+                    return true
+                } else {
+                    plugin.addSubTeam(sender, args[1], args[0])
+                    return true
+                }
+            }
+        }
+
+
+
+        else if (command.name.equals("changenick", ignoreCase = true)) {
             if (sender is Player && sender.isOp) {
                 if (args.isNotEmpty()) {
-                    val newNick = if (args[0] == "reset") sender.name else args[0]
-                    if (args[0] == "reset") {
-                        sender.sendMessage("닉네임이 초기화되었습니다.")
-                    } else {
-                        sender.sendMessage("닉네임이 '$newNick'(으)로 변경되었습니다.")
-                    }
-                      plugin.changePlayerName(sender, newNick)
+                    plugin.changePlayerName(sender, args[0])
+                    sender.sendMessage("닉네임이 변경되었습니다.")
                 }
 
             } else {

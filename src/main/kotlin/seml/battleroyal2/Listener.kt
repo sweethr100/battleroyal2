@@ -126,15 +126,15 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
         val command = event.message.split(" ")[0].removePrefix("/").lowercase()
         if (command in blocked) {
             event.isCancelled = true
-            event.player.sendMessage("귓속말 명령어는 사용할 수 없습니다.")
+            event.player.sendMessage("이 명령어는 사용할 수 없습니다.")
         }
     }
 
     @EventHandler
     fun onPlayerDeath(event: PlayerDeathEvent) {
         val player = event.entity
-        val playerName = player.playerListName()
-        event.deathMessage(Component.text("§c${playerName}이(가) 죽었습니다"))
+        val playerName = player.playerListName() ?: player.name
+        event.deathMessage(Component.text { "§c${playerName}이(가) 죽었습니다" })
         if (plugin.isStarted) player.gameMode = GameMode.SPECTATOR
     }
 }
