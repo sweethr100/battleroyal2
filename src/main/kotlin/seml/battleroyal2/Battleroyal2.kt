@@ -122,8 +122,6 @@ class Battleroyal2 : JavaPlugin() {
 
     fun changePlayerName(player: Player, nickname: String) {
         player.playerListName(Component.text(nickname))
-
-
     }
 
     fun spreadTeam(team: List<Player>, centerX: Int, centerZ: Int, size: Int, world: World) {

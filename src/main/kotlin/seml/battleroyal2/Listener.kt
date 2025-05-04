@@ -122,7 +122,7 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
     @EventHandler
     fun onCommandPreprocess(event: PlayerCommandPreprocessEvent) {
-        val blocked = listOf("msg", "tell", "w", "me")
+        val blocked = listOf("msg", "tell", "w", "me","teammsg")
         val command = event.message.split(" ")[0].removePrefix("/").lowercase()
         if (command in blocked) {
             event.isCancelled = true
