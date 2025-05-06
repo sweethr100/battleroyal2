@@ -3,6 +3,8 @@ package seml.battleroyal2
 import BattleroyalTabCompleter
 import com.sun.tools.javac.tree.TreeInfo.args
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
+import jdk.internal.net.http.common.Utils.remaining
+import net.kyori.adventure.bossbar.BossBar.bossBar
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -17,6 +19,11 @@ import org.bukkit.Location
 import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.scoreboard.Team
 import kotlin.math.pow
+import net.kyori.adventure.title.Title
+import org.bukkit.boss.BarColor
+import org.bukkit.boss.BarStyle
+import org.bukkit.boss.BossBar
+import org.bukkit.scheduler.BukkitRunnable
 
 
 class Battleroyal2 : JavaPlugin() {
@@ -24,6 +31,7 @@ class Battleroyal2 : JavaPlugin() {
     private lateinit var scoreboard: Scoreboard
     lateinit var subTeam: Team
     lateinit var memTeam: Team
+    lateinit var bossBar: BossBar
 
     override fun onEnable() {
         // 리스너 등록
@@ -182,7 +190,25 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    fun startGame(sender : CommandSender = server.consoleSender) {
+    fun startCountdown(seconds: Int, bossBar: BossBar) {
+        var remaining = seconds
+        bossBar.progress = 1.0 // 게이지 초기화[3]
+
+        object : BukkitRunnable() {
+            override fun run() {
+                if (remaining > 0) {
+
+                    bossBar.setTitle("남은 시간: ${remaining}초") // 텍스트 업데이트[3]
+                    bossBar.progress = remaining.toDouble() / seconds.toDouble() // 게이지 계산[3]
+                    remaining--
+                } else {
+                    cancel() // 타이머 종료[3]
+                }
+            }
+        }.runTaskTimer(this, 0, 20) // 1초 간격 실행[3]
+    }
+
+    fun startGame(sender : CommandSender = server.consoleSender, worldSize : Int = 3000) {
         val world = server.getWorld("world") ?: return
 
         isStarted = !isStarted
@@ -207,19 +233,31 @@ class Battleroyal2 : JavaPlugin() {
         world.thunderDuration = 0
         world.isThundering = false
 
+        bossBar = Bukkit.createBossBar("Time left", BarColor.RED, BarStyle.SOLID)
+        bossBar.isVisible = true
+
         for (player in server.onlinePlayers) {
             player.gameMode = GameMode.SURVIVAL
             player.inventory.clear()
             player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
+            player.showTitle(Title.title(
+                Component.text("배틀로얄이 시작되었습니다!"),
+                Component.text("생존을 위해 싸우세요!")
+            ))
+
+            bossBar.addPlayer(player)
         }
+
+        world.worldBorder.size = worldSize.toDouble()
+
 
         val blockedBlocks = listOf(Material.WATER, Material.LAVA, Material.BAMBOO)
 
-        val (subX, subZ) = getSafeTeamBase(0, 0, 3000, world, blockedBlocks)
+        val (subX, subZ) = getSafeTeamBase(0, 0, worldSize, world, blockedBlocks)
         var memX: Int
         var memZ: Int
         do {
-            val (x, z) = getSafeTeamBase(0, 0, 3000, world, blockedBlocks)
+            val (x, z) = getSafeTeamBase(0, 0, worldSize, world, blockedBlocks)
             memX = x
             memZ = z
             val distance = Math.sqrt(((subX - memX).toDouble().pow(2) + (subZ - memZ).toDouble().pow(2)))
@@ -227,6 +265,8 @@ class Battleroyal2 : JavaPlugin() {
 
         teleportTeam(subTeam, subX, subZ, world, blockedBlocks)
         teleportTeam(memTeam, memX, memZ, world, blockedBlocks)
+
+        startCountdown(300, bossBar)
 
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
