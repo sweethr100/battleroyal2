@@ -16,6 +16,7 @@ import org.bukkit.World
 import org.bukkit.Location
 import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.scoreboard.Team
+import kotlin.math.pow
 
 
 class Battleroyal2 : JavaPlugin() {
@@ -135,27 +136,49 @@ class Battleroyal2 : JavaPlugin() {
     }
 
 
-    fun pickaxeTier(material: org.bukkit.Material): Int = when (material) {
-        org.bukkit.Material.WOODEN_PICKAXE -> 1
-        org.bukkit.Material.STONE_PICKAXE -> 2
-        org.bukkit.Material.IRON_PICKAXE -> 3
-        org.bukkit.Material.GOLDEN_PICKAXE -> 2
-        org.bukkit.Material.DIAMOND_PICKAXE -> 4
-        org.bukkit.Material.NETHERITE_PICKAXE -> 5
+    fun pickaxeTier(material: Material): Int = when (material) {
+        Material.WOODEN_PICKAXE -> 1
+        Material.STONE_PICKAXE -> 2
+        Material.IRON_PICKAXE -> 3
+        Material.GOLDEN_PICKAXE -> 2
+        Material.DIAMOND_PICKAXE -> 4
+        Material.NETHERITE_PICKAXE -> 5
         else -> 0
     }
 
 
-    fun spreadTeam(team: Team, centerX: Int, centerZ: Int, size: Int, world: World) {
-        val baseX = centerX + (-size/2..size/2).random()
-        val baseZ = centerZ + (-size/2..size/2).random()
+    fun getSafeTeamBase(centerX: Int, centerZ: Int, size: Int, world: World, blockedBlocks: Collection<Material>): Pair<Int, Int> {
+        var baseX: Int
+        var baseZ: Int
+        var attempts = 0
+        while (true) {
+            baseX = centerX + (-size / 2..size / 2).random()
+            baseZ = centerZ + (-size / 2..size / 2).random()
+            val baseY = world.getHighestBlockYAt(baseX, baseZ)
+            val blockBelow = world.getBlockAt(baseX, baseY, baseZ)
+            if (blockBelow.type !in blockedBlocks) {
+                break
+            }
+            attempts++
+            if (attempts > 50) break
+        }
+        return baseX to baseZ
+    }
+
+    fun teleportTeam(team: Team, baseX: Int, baseZ: Int, world: World, blockedBlocks: Collection<Material>) {
         for (entry in team.entries) {
             val player = Bukkit.getPlayer(entry) ?: continue
+            while (true) {
+                val x = baseX + (-2..2).random()
+                val z = baseZ + (-2..2).random()
+                val y = world.getHighestBlockYAt(x, z) + 1
+                val blockBelow = world.getBlockAt(x, y - 1, z)
+                if (blockBelow.type !in blockedBlocks) {
+                    player.teleport(Location(world, x.toDouble(), y.toDouble(), z.toDouble()))
+                    break
+                }
+            }
 
-            val x = baseX + (-2..2).random() // -2, -1, 0, 1, 2
-            val z = baseZ + (-2..2).random() // -2, -1, 0, 1, 2
-            val y = world.getHighestBlockYAt(x, z) + 1
-            player.teleport(Location(world, x.toDouble(), y.toDouble(), z.toDouble()))
         }
     }
 
@@ -190,10 +213,21 @@ class Battleroyal2 : JavaPlugin() {
             player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
         }
 
-        // 사용 예시
-        val players = server.onlinePlayers.shuffled().toList()
-        spreadTeam(subTeam, 0, 0, 3000, world)
-        //spreadTeam(teamB, 0, 0, 3000, world)
+        val blockedBlocks = listOf(Material.WATER, Material.LAVA, Material.BAMBOO)
+
+        val (subX, subZ) = getSafeTeamBase(0, 0, 3000, world, blockedBlocks)
+        var memX: Int
+        var memZ: Int
+        do {
+            val (x, z) = getSafeTeamBase(0, 0, 3000, world, blockedBlocks)
+            memX = x
+            memZ = z
+            val distance = Math.sqrt(((subX - memX).toDouble().pow(2) + (subZ - memZ).toDouble().pow(2)))
+        } while (distance < 1000)
+
+        teleportTeam(subTeam, subX, subZ, world, blockedBlocks)
+        teleportTeam(memTeam, memX, memZ, world, blockedBlocks)
+
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
     }
