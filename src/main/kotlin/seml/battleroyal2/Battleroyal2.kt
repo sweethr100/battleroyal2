@@ -56,7 +56,7 @@ class Battleroyal2 : JavaPlugin() {
 
 
         // 설정값 불러오기
-        isStarted = config.getBoolean("isStarted", false)
+        //isStarted = config.getBoolean("isStarted", false)
         for (player in server.onlinePlayers) {
             val nickname = config.getString("players.${player.uniqueId}.nickname")
             if (nickname != null) {
@@ -77,13 +77,15 @@ class Battleroyal2 : JavaPlugin() {
         getCommand("changenick")?.setExecutor(null)
         getCommand("addTeam")?.setExecutor(null)
         getCommand("makeSpawn")?.setExecutor(null)
+
+        bossBar.removeAll()
     }
 
     fun setup() {
         val world = server.getWorld("world") ?: return
         world.difficulty = org.bukkit.Difficulty.HARD
-        world.setSpawnLocation(org.bukkit.Location(world, 0.0, 201.0, 0.0))
-        world.worldBorder.center = org.bukkit.Location(world, 0.0, 0.0, 0.0)
+        world.setSpawnLocation(Location(world, 0.0, 201.0, 0.0))
+        world.worldBorder.center = Location(world, 0.0, 0.0, 0.0)
     }
 
     fun makeSpawn() {
@@ -93,16 +95,16 @@ class Battleroyal2 : JavaPlugin() {
         val baseZ = -15
         for (x in 0..30) {
             for (z in 0..30) {
-                world.getBlockAt(baseX + x, baseY, baseZ + z).type = org.bukkit.Material.GRASS_BLOCK
-                world.getBlockAt(baseX + x, baseY + 15, baseZ + z).type = org.bukkit.Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + x, baseY, baseZ + z).type = Material.GRASS_BLOCK
+                world.getBlockAt(baseX + x, baseY + 15, baseZ + z).type = Material.LIGHT_GRAY_STAINED_GLASS
             }
         }
         for (i in 0..30) {
             for (j in 0..13) {
-                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ - 1).type = org.bukkit.Material.LIGHT_GRAY_STAINED_GLASS
-                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ + 31).type = org.bukkit.Material.LIGHT_GRAY_STAINED_GLASS
-                world.getBlockAt(baseX - 1, baseY + 1 + j, baseZ + i).type = org.bukkit.Material.LIGHT_GRAY_STAINED_GLASS
-                world.getBlockAt(baseX + 31, baseY + 1 + j, baseZ + i).type = org.bukkit.Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ - 1).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + i, baseY + 1 + j, baseZ + 31).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX - 1, baseY + 1 + j, baseZ + i).type = Material.LIGHT_GRAY_STAINED_GLASS
+                world.getBlockAt(baseX + 31, baseY + 1 + j, baseZ + i).type = Material.LIGHT_GRAY_STAINED_GLASS
             }
         }
     }
@@ -190,19 +192,30 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    fun startCountdown(seconds: Int, bossBar: BossBar) {
+    fun startCountdown(seconds: Int, title: String, bossBar: BossBar, onFinish: () -> Unit = {}) {
         var remaining = seconds
         bossBar.progress = 1.0 // 게이지 초기화[3]
 
         object : BukkitRunnable() {
             override fun run() {
                 if (remaining > 0) {
+                    val minutes = remaining / 60
+                    val secs = remaining % 60
+                    val timeString = String.format("%02d:%02d", minutes, secs)
 
-                    bossBar.setTitle("남은 시간: ${remaining}초") // 텍스트 업데이트[3]
+                    if (remaining <= 30) {
+                        bossBar.color = BarColor.RED
+                    } else {
+                        bossBar.color = BarColor.WHITE
+                    }
+
+                    bossBar.setTitle("$title : $timeString") // 텍스트 업데이트[3]
                     bossBar.progress = remaining.toDouble() / seconds.toDouble() // 게이지 계산[3]
                     remaining--
                 } else {
+                    bossBar.removeAll()
                     cancel() // 타이머 종료[3]
+                    onFinish()
                 }
             }
         }.runTaskTimer(this, 0, 20) // 1초 간격 실행[3]
@@ -212,8 +225,8 @@ class Battleroyal2 : JavaPlugin() {
         val world = server.getWorld("world") ?: return
 
         isStarted = !isStarted
-        config.set("isStarted", isStarted)
-        saveConfig()
+//        config.set("isStarted", isStarted)
+//        saveConfig()
 
         val baseX = -16
         val baseY = 200
@@ -233,7 +246,8 @@ class Battleroyal2 : JavaPlugin() {
         world.thunderDuration = 0
         world.isThundering = false
 
-        bossBar = Bukkit.createBossBar("Time left", BarColor.RED, BarStyle.SOLID)
+        bossBar = Bukkit.createBossBar("남은 시간", BarColor.WHITE, BarStyle.SOLID)
+
         bossBar.isVisible = true
 
         for (player in server.onlinePlayers) {
@@ -266,7 +280,19 @@ class Battleroyal2 : JavaPlugin() {
         teleportTeam(subTeam, subX, subZ, world, blockedBlocks)
         teleportTeam(memTeam, memX, memZ, world, blockedBlocks)
 
-        startCountdown(300, bossBar)
+        startCountdown(300, "자기장 축소까지", bossBar) {
+            val newSize = world.worldBorder.size - 100
+            if (newSize > 0) {
+                world.worldBorder.setSize(newSize,300)
+                startCountdown(300, "자기장 축소까지", bossBar)
+            } else {
+                for (player in server.onlinePlayers) {
+                    player.sendMessage("게임이 종료되었습니다!")
+                    player.gameMode = GameMode.SPECTATOR
+                }
+                isStarted = false
+            }
+        }
 
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
