@@ -26,7 +26,7 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
 
             when (args[0].lowercase()) {
                 "start" -> {
-                    plugin.startGame(sender)
+                    plugin.startGame(sender, 3000)
                 }
             }
             return true
