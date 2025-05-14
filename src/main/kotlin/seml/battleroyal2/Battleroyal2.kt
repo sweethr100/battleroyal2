@@ -31,7 +31,6 @@ class Battleroyal2 : JavaPlugin() {
     private lateinit var scoreboard: Scoreboard
     lateinit var subTeam: Team
     lateinit var memTeam: Team
-    lateinit var bossBar: BossBar
 
     override fun onEnable() {
         // 리스너 등록
@@ -78,7 +77,9 @@ class Battleroyal2 : JavaPlugin() {
         getCommand("addTeam")?.setExecutor(null)
         getCommand("makeSpawn")?.setExecutor(null)
 
-        bossBar.removeAll()
+        for (bossBar in Bukkit.getBossBars()) {
+            bossBar.removeAll()
+        }
     }
 
     fun setup() {
@@ -192,9 +193,16 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    fun startCountdown(seconds: Int, title: String, bossBar: BossBar, onFinish: () -> Unit = {}) {
+    fun startCountdown(seconds: Int, title: String, onFinish: () -> Unit = {}) {
         var remaining = seconds
+
+        var bossBar = Bukkit.createBossBar(title, BarColor.WHITE, BarStyle.SOLID)
+        bossBar.isVisible = true
         bossBar.progress = 1.0 // 게이지 초기화[3]
+
+        for (player in server.onlinePlayers) {
+            bossBar.addPlayer(player)
+        }
 
         object : BukkitRunnable() {
             override fun run() {
@@ -213,6 +221,7 @@ class Battleroyal2 : JavaPlugin() {
                     bossBar.progress = remaining.toDouble() / seconds.toDouble() // 게이지 계산[3]
                     remaining--
                 } else {
+                    bossBar.removeAll()
                     bossBar.removeAll()
                     cancel() // 타이머 종료[3]
                     onFinish()
@@ -246,9 +255,8 @@ class Battleroyal2 : JavaPlugin() {
         world.thunderDuration = 0
         world.isThundering = false
 
-        bossBar = Bukkit.createBossBar("남은 시간", BarColor.WHITE, BarStyle.SOLID)
 
-        bossBar.isVisible = true
+
 
         for (player in server.onlinePlayers) {
             player.gameMode = GameMode.SURVIVAL
@@ -259,7 +267,6 @@ class Battleroyal2 : JavaPlugin() {
                 Component.text("생존을 위해 싸우세요!")
             ))
 
-            bossBar.addPlayer(player)
         }
 
         world.worldBorder.size = worldSize.toDouble()
@@ -280,11 +287,11 @@ class Battleroyal2 : JavaPlugin() {
         teleportTeam(subTeam, subX, subZ, world, blockedBlocks)
         teleportTeam(memTeam, memX, memZ, world, blockedBlocks)
 
-        startCountdown(300, "자기장 축소까지", bossBar) {
+        startCountdown(300, "자기장 축소까지") {
             val newSize = world.worldBorder.size - 100
             if (newSize > 0) {
                 world.worldBorder.setSize(newSize,300)
-                startCountdown(300, "자기장 축소까지", bossBar)
+                startCountdown(300, "자기장 축소까지")
             } else {
                 for (player in server.onlinePlayers) {
                     player.sendMessage("게임이 종료되었습니다!")
