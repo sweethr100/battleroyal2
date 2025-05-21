@@ -1,10 +1,6 @@
 package seml.battleroyal2
 
 import BattleroyalTabCompleter
-import com.sun.tools.javac.tree.TreeInfo.args
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
-import jdk.internal.net.http.common.Utils.remaining
-import net.kyori.adventure.bossbar.BossBar.bossBar
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -20,12 +16,14 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.scoreboard.Team
 import kotlin.math.pow
 import net.kyori.adventure.title.Title
+import org.bukkit.SoundCategory
 import org.bukkit.boss.BarColor
 import org.bukkit.boss.BarStyle
 import org.bukkit.boss.BossBar
 import org.bukkit.scheduler.BukkitRunnable
-import java.awt.print.Paper
-import org.bukkit.plugin.Plugin
+import org.bukkit.scoreboard.Criteria
+import org.bukkit.scoreboard.DisplaySlot
+import org.bukkit.Sound
 
 
 class Battleroyal2 : JavaPlugin() {
@@ -33,6 +31,7 @@ class Battleroyal2 : JavaPlugin() {
     private lateinit var scoreboard: Scoreboard
     lateinit var subTeam: Team
     lateinit var memTeam: Team
+    val bossBars: MutableList<BossBar> = mutableListOf()
 
     override fun onEnable() {
         // 리스너 등록
@@ -81,6 +80,9 @@ class Battleroyal2 : JavaPlugin() {
         getCommand("addTeam")?.setExecutor(null)
         getCommand("makeSpawn")?.setExecutor(null)
 
+        for (bossBar in bossBars) {
+            bossBar.removeAll()
+        }
     }
 
     fun setup() {
@@ -197,6 +199,7 @@ class Battleroyal2 : JavaPlugin() {
     fun startCountdown(seconds: Int, title: String, onFinish: () -> Unit = {}) {
         var remaining = seconds
         val bossBar = Bukkit.createBossBar("자기장 축소까지", BarColor.WHITE, BarStyle.SOLID)
+        bossBars.add(bossBar)
         bossBar.isVisible = true
         bossBar.progress = 1.0
 
@@ -249,6 +252,22 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
+    fun updatePlayerCountInSideBar() {
+        val survivalCount = Bukkit.getOnlinePlayers().count { it.gameMode == GameMode.SURVIVAL }
+        val scoreboard = Bukkit.getScoreboardManager().newScoreboard
+        val objective = scoreboard.registerNewObjective(
+            "PlayerCount", // 오브젝티브 이름
+            Criteria.DUMMY,  // 기준 (기존 "dummy" 대신 Enum 사용)
+            Component.text("남은 인원") // 표시 이름 (Component로 래핑)
+        )
+
+        objective.displaySlot = DisplaySlot.SIDEBAR
+        objective.getScore("남은 인원").score = survivalCount
+
+        Bukkit.getOnlinePlayers().forEach { it.scoreboard = scoreboard }
+    }
+
+
     fun startGame(sender : CommandSender = server.consoleSender, worldSize : Int = 3000) {
         val world = server.getWorld("world") ?: return
 
@@ -274,9 +293,6 @@ class Battleroyal2 : JavaPlugin() {
         world.thunderDuration = 0
         world.isThundering = false
 
-
-
-
         for (player in server.onlinePlayers) {
             player.gameMode = GameMode.SURVIVAL
             player.inventory.clear()
@@ -288,8 +304,10 @@ class Battleroyal2 : JavaPlugin() {
 
         }
 
-        world.worldBorder.size = worldSize.toDouble()
+        updatePlayerCountInSideBar()
 
+
+        world.worldBorder.size = worldSize.toDouble()
 
         val blockedBlocks = listOf(Material.WATER, Material.LAVA, Material.BAMBOO)
 
@@ -317,5 +335,32 @@ class Battleroyal2 : JavaPlugin() {
 
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
+    }
+
+    fun endGame() {
+        val survivors = Bukkit.getOnlinePlayers().filter { it.gameMode == GameMode.SURVIVAL }
+
+        for (player in Bukkit.getOnlinePlayers()) {
+            player.showTitle(Title.title(
+                Component.text("게임 종료!"),
+                Component.text("1인자 : $(survivors[0].name)"),
+            ))
+
+            player.playSound(
+                player.location, // 플레이어 위치에서
+                Sound.ITEM_TRIDENT_THUNDER, // 소리 이름 (Enum)
+                SoundCategory.MASTER, // 소리 카테고리 (MASTER, PLAYER, AMBIENT 등)
+                1.0f, // 볼륨
+                1.0f  // 피치
+            )
+
+            player.playSound(
+                player.location, // 플레이어 위치에서
+                Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, // 소리 이름 (Enum)
+                SoundCategory.MASTER, // 소리 카테고리 (MASTER, PLAYER, AMBIENT 등)
+                1.0f, // 볼륨
+                1.0f  // 피치
+            )
+        }
     }
 }

@@ -11,7 +11,9 @@ import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.kyori.adventure.title.Title
 
 class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
@@ -138,5 +140,27 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
         val playerName = PlainTextComponentSerializer.plainText().serialize(player.playerListName()) ?: player.name
         event.deathMessage(Component.text("§c${playerName}이(가) 죽었습니다"))
         if (plugin.isStarted) player.gameMode = GameMode.SPECTATOR
+
+        val survivalCount = Bukkit.getOnlinePlayers().count { it.gameMode == GameMode.SURVIVAL }
+        player.sendMessage(Component.text("당신의 순위 : ${survivalCount + 1}위").decorate(TextDecoration.BOLD))
+
+        if (survivalCount == 1) {
+            plugin.endGame()
+        }
+
+        plugin.updatePlayerCountInSideBar()
+    }
+
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        plugin.updatePlayerCountInSideBar()
+
+        val survivalCount = Bukkit.getOnlinePlayers().count { it.gameMode == GameMode.SURVIVAL }
+
+        if (survivalCount == 1) {
+            plugin.endGame()
+        }
+
+        plugin.updatePlayerCountInSideBar()
     }
 }
