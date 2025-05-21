@@ -33,7 +33,6 @@ class Battleroyal2 : JavaPlugin() {
     private lateinit var scoreboard: Scoreboard
     lateinit var subTeam: Team
     lateinit var memTeam: Team
-    private lateinit var bossBar: BossBar
 
     override fun onEnable() {
         // 리스너 등록
@@ -82,7 +81,6 @@ class Battleroyal2 : JavaPlugin() {
         getCommand("addTeam")?.setExecutor(null)
         getCommand("makeSpawn")?.setExecutor(null)
 
-        bossBar.removeAll()
     }
 
     fun setup() {
@@ -196,8 +194,13 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    fun startCountdown(seconds: Int, title: String,bossBar: BossBar, onFinish: () -> Unit = {}) {
+    fun startCountdown(seconds: Int, title: String, onFinish: () -> Unit = {}) {
         var remaining = seconds
+        val bossBar = Bukkit.createBossBar("자기장 축소까지", BarColor.WHITE, BarStyle.SOLID)
+        bossBar.isVisible = true
+        bossBar.progress = 1.0
+
+        Bukkit.getOnlinePlayers().forEach { bossBar.addPlayer(it) }
 
         object : BukkitRunnable() {
             override fun run() {
@@ -229,23 +232,20 @@ class Battleroyal2 : JavaPlugin() {
         plugin: JavaPlugin,
         world: World,
         eventTimes: List<Triple<Int, Int, Int>>,
-        bossBar: BossBar,
         index: Int = 0,
     ) {
         if (index >= eventTimes.size) {
-            bossBar.setTitle("자기장 최소 사이즈 도달")
-            bossBar.progress = 1.0
-            bossBar.color = BarColor.WHITE
             return
         }
 
         val (time, size, duration) = eventTimes[index]
-        startCountdown(time, "자기장 축소까지", bossBar) {
+        startCountdown(time, "자기장 축소까지") {
+
             world.worldBorder.setSize(size.toDouble(), duration.toLong())
             // duration초(마인크래프트 틱 단위로 환산) 후 다음 이벤트 실행
-            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-                runWorldBorderEventsSequentially(plugin, world, eventTimes, bossBar, index + 1)
-            }, duration * 20L) // 1초 = 20틱
+            startCountdown(duration, "자기장 축소중") {
+                runWorldBorderEventsSequentially(plugin, world, eventTimes, index + 1)
+            }
         }
     }
 
@@ -274,9 +274,7 @@ class Battleroyal2 : JavaPlugin() {
         world.thunderDuration = 0
         world.isThundering = false
 
-        bossBar = Bukkit.createBossBar("자기장 축소까지", BarColor.WHITE, BarStyle.SOLID)
-        bossBar.isVisible = true
-        bossBar.progress = 1.0
+
 
 
         for (player in server.onlinePlayers) {
@@ -288,7 +286,6 @@ class Battleroyal2 : JavaPlugin() {
                 Component.text("생존을 위해 싸우세요!")
             ))
 
-            bossBar.addPlayer(player)
         }
 
         world.worldBorder.size = worldSize.toDouble()
@@ -316,27 +313,7 @@ class Battleroyal2 : JavaPlugin() {
             Triple(600,20,300)
         )
 
-        runWorldBorderEventsSequentially(this, world, eventTimes, bossBar)
-
-//        for ((time, size, duration) in eventTimes) {
-//            startCountdown(time, "자기장 축소까지") {
-//                world.worldBorder.setSize(size.toDouble(), duration.toLong())
-//            }
-//        }
-
-//        startCountdown(300, "자기장 축소까지") {
-//            val newSize = world.worldBorder.size - 100
-//            if (newSize > 0) {
-//                world.worldBorder.setSize(newSize,300)
-//                startCountdown(300, "자기장 축소까지")
-//            } else {
-//                for (player in server.onlinePlayers) {
-//                    player.sendMessage("게임이 종료되었습니다!")
-//                    player.gameMode = GameMode.SPECTATOR
-//                }
-//                isStarted = false
-//            }
-//        }
+        runWorldBorderEventsSequentially(this, world, eventTimes)
 
 
         sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
