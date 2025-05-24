@@ -45,7 +45,7 @@ class CommandHandler(val plugin: Battleroyal2) : CommandExecutor {
                     sender.sendMessage("사용법: /help addTeam")
                     return true
                 } else {
-                    plugin.addSubTeam(sender, args[1], args[0])
+                    plugin.addTeam(sender, args[1], args[0])
                     return true
                 }
             }

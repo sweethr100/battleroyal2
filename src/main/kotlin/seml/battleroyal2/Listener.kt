@@ -1,5 +1,6 @@
 package seml.battleroyal2
 
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import io.papermc.paper.event.player.AsyncChatEvent
 import org.bukkit.*
 import org.bukkit.entity.*
@@ -19,6 +20,11 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
+        val nickname = plugin.config.getString("players.${event.player.uniqueId}.nickname")
+        if (nickname != null) {
+            plugin.changePlayerName(event.player, nickname)
+        }
+
         if (!event.player.hasPlayedBefore()) {
             val world = Bukkit.getWorld("world") ?: return
             val spawnLoc = Location(world, 0.5, 201.0, 0.5)
@@ -41,7 +47,10 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
     @EventHandler
     fun onCreatureSpawn(event: CreatureSpawnEvent) {
-        if (event.entityType.isAlive && event.entityType.isSpawnable && event.entity is Monster) {
+        if (
+            (event.entityType.isAlive && event.entityType.isSpawnable && event.entity is Monster)
+            || event.entityType == EntityType.PHANTOM
+            ) {
             event.isCancelled = true
         }
     }
@@ -61,6 +70,25 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
             event.isCancelled = true
         }
     }
+
+    @EventHandler
+    fun onEntityDamageByEntity(event: EntityDamageByEntityEvent) {
+
+        val victim = event.entity
+        val damager = event.damager
+
+        if (victim !is Player || damager !is Player) return
+
+        val damagerTeam = plugin.scoreboard.getEntryTeam(damager.name)
+        val victimTeam = plugin.scoreboard.getEntryTeam(victim.name)
+
+        // 같은 팀 소속 확인
+        if (damagerTeam != null && damagerTeam == victimTeam) {
+            event.isCancelled = true
+            damager.sendActionBar(Component.text("아군을 공격할 수 없습니다!", NamedTextColor.RED))
+        }
+    }
+
     @EventHandler
     fun onFoodLevelChange(event: FoodLevelChangeEvent) {
         // isStarted가 false면 배고픔이 줄지 않게 막음

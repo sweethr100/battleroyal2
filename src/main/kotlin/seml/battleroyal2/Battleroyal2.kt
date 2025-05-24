@@ -1,6 +1,7 @@
 package seml.battleroyal2
 
 import BattleroyalTabCompleter
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -9,6 +10,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.Location
@@ -28,7 +30,7 @@ import org.bukkit.Sound
 
 class Battleroyal2 : JavaPlugin() {
     var isStarted: Boolean = false
-    private lateinit var scoreboard: Scoreboard
+    lateinit var scoreboard: Scoreboard
     lateinit var subTeam: Team
     lateinit var memTeam: Team
     val bossBars: MutableList<BossBar> = mutableListOf()
@@ -53,18 +55,11 @@ class Battleroyal2 : JavaPlugin() {
 
         subTeam.color(NamedTextColor.RED)
         memTeam.color(NamedTextColor.BLUE)
+
         subTeam.setAllowFriendlyFire(false)
         memTeam.setAllowFriendlyFire(false)
 
 
-        // 설정값 불러오기
-        //isStarted = config.getBoolean("isStarted", false)
-        for (player in server.onlinePlayers) {
-            val nickname = config.getString("players.${player.uniqueId}.nickname")
-            if (nickname != null) {
-                changePlayerName(player, nickname)
-            }
-        }
 
         if (!isStarted) {
             setup()
@@ -114,24 +109,24 @@ class Battleroyal2 : JavaPlugin() {
     }
 
     fun changePlayerName(player: Player, nickname: String) {
+        val team: Team? = scoreboard.getEntryTeam(player.name)
 
         if (nickname == "reset" || nickname == player.name) {
             player.playerListName(null)
-
             config.set("players.${player.uniqueId}.nickname", null)
             saveConfig()
+            reloadConfig()
 
         } else {
-            val team: Team? = scoreboard.getEntryTeam(player.name)
-
             player.playerListName(Component.text(nickname,team?.color() ?: NamedTextColor.WHITE))
             config.set("players.${player.uniqueId}.nickname", nickname)
             saveConfig()
+            reloadConfig()
         }
 
     }
 
-    fun addSubTeam(sender: Player, targetName: String, team: String) {
+    fun addTeam(sender: Player, targetName: String, team: String) {
         val targetPlayer = Bukkit.getPlayerExact(targetName)
         val team = scoreboard.getTeam(team) ?: return
 
@@ -139,15 +134,15 @@ class Battleroyal2 : JavaPlugin() {
             sender.sendMessage("해당 닉네임의 플레이어가 온라인이 아닙니다.")
             return
         } else {
-            team.addPlayer(targetPlayer)
+            val playerName = PlainTextComponentSerializer.plainText().serialize(targetPlayer.playerListName()) ?: targetPlayer.name
+
+            team.addEntry(targetPlayer.name)
+            changePlayerName(targetPlayer, playerName)
             sender.sendMessage("${targetPlayer.name}님을 ${team.name} 팀에 추가했습니다.")
 
-            if (targetPlayer.playerListName() != null) {
-                changePlayerName(targetPlayer, config.getString("players.${targetPlayer.uniqueId}.nickname") ?: targetPlayer.name)
-
-            }
         }
     }
+
 
 
     fun pickaxeTier(material: Material): Int = when (material) {
@@ -272,8 +267,6 @@ class Battleroyal2 : JavaPlugin() {
         val world = server.getWorld("world") ?: return
 
         isStarted = !isStarted
-//        config.set("isStarted", isStarted)
-//        saveConfig()
 
         val baseX = -16
         val baseY = 200
@@ -286,6 +279,9 @@ class Battleroyal2 : JavaPlugin() {
                 }
             }
         }
+
+        subTeam.setAllowFriendlyFire(false)
+        memTeam.setAllowFriendlyFire(false)
 
         world.time = 0
         world.clearWeatherDuration = 20 * 60 * 10
@@ -302,6 +298,11 @@ class Battleroyal2 : JavaPlugin() {
                 Component.text("생존을 위해 싸우세요!")
             ))
 
+            val team: Team? = scoreboard.getEntryTeam(player.name)
+            if (team != null) {
+                addTeam(player, player.name, team.name)
+            }
+
         }
 
         updatePlayerCountInSideBar()
@@ -309,7 +310,7 @@ class Battleroyal2 : JavaPlugin() {
 
         world.worldBorder.size = worldSize.toDouble()
 
-        val blockedBlocks = listOf(Material.WATER, Material.LAVA, Material.BAMBOO)
+        val blockedBlocks = listOf(Material.WATER, Material.LAVA, Material.BAMBOO, Material.KELP)
 
         val (subX, subZ) = getSafeTeamBase(0, 0, worldSize, world, blockedBlocks)
         var memX: Int
@@ -328,7 +329,7 @@ class Battleroyal2 : JavaPlugin() {
             Triple(1080,2000,600),
             Triple(900,1000,600),
             Triple(720,500,600),
-            Triple(600,20,300)
+            Triple(600,1,300)
         )
 
         runWorldBorderEventsSequentially(this, world, eventTimes)
@@ -343,7 +344,7 @@ class Battleroyal2 : JavaPlugin() {
         for (player in Bukkit.getOnlinePlayers()) {
             player.showTitle(Title.title(
                 Component.text("게임 종료!"),
-                Component.text("1인자 : $(survivors[0].name)"),
+                Component.text("#1 : ${survivors[0].name}", NamedTextColor.GOLD),
             ))
 
             player.playSound(
