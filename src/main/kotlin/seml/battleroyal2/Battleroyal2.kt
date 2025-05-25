@@ -108,11 +108,11 @@ class Battleroyal2 : JavaPlugin() {
         }
     }
 
-    fun changePlayerName(player: Player, nickname: String) {
+    fun changePlayerName(player: Player, nickname: String?) {
         val team: Team? = scoreboard.getEntryTeam(player.name)
 
-        if (nickname == "reset" || nickname == player.name) {
-            player.playerListName(null)
+        if (nickname == "reset" || nickname == null) {
+            player.playerListName(Component.text(player.name, team?.color() ?: NamedTextColor.WHITE))
             config.set("players.${player.uniqueId}.nickname", null)
             saveConfig()
             reloadConfig()
@@ -134,7 +134,7 @@ class Battleroyal2 : JavaPlugin() {
             sender.sendMessage("해당 닉네임의 플레이어가 온라인이 아닙니다.")
             return
         } else {
-            val playerName = PlainTextComponentSerializer.plainText().serialize(targetPlayer.playerListName()) ?: targetPlayer.name
+            val playerName = PlainTextComponentSerializer.plainText().serialize(targetPlayer.playerListName()) ?: null
 
             team.addEntry(targetPlayer.name)
             changePlayerName(targetPlayer, playerName)
@@ -266,7 +266,7 @@ class Battleroyal2 : JavaPlugin() {
     fun startGame(sender : CommandSender = server.consoleSender, worldSize : Int = 3000) {
         val world = server.getWorld("world") ?: return
 
-        isStarted = !isStarted
+        isStarted = false
 
         val baseX = -16
         val baseY = 200
@@ -297,11 +297,6 @@ class Battleroyal2 : JavaPlugin() {
                 Component.text("배틀로얄이 시작되었습니다!"),
                 Component.text("생존을 위해 싸우세요!")
             ))
-
-            val team: Team? = scoreboard.getEntryTeam(player.name)
-            if (team != null) {
-                addTeam(player, player.name, team.name)
-            }
 
         }
 
