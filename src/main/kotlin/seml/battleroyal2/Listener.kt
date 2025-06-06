@@ -2,6 +2,7 @@ package seml.battleroyal2
 
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
 import io.papermc.paper.event.player.AsyncChatEvent
+import io.papermc.paper.event.world.border.WorldBorderBoundsChangeEvent
 import org.bukkit.*
 import org.bukkit.entity.*
 import org.bukkit.event.*
@@ -15,6 +16,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.kyori.adventure.title.Title
+import org.bukkit.event.weather.WeatherChangeEvent
 
 class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
@@ -191,4 +193,13 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
 
         plugin.updatePlayerCountInSideBar()
     }
+
+    @EventHandler
+    fun onWeatherChange(event: WeatherChangeEvent) {
+        // 날씨가 비/눈 등으로 바뀌려 할 때
+        if (!plugin.isStarted && event.toWeatherState()) {
+            event.isCancelled = true
+        }
+    }
+
 }

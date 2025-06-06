@@ -52,9 +52,11 @@ class Battleroyal2 : JavaPlugin() {
         subTeam = scoreboard.getTeam("subTeam") ?: scoreboard.registerNewTeam("subTeam")
         memTeam = scoreboard.getTeam("memTeam") ?: scoreboard.registerNewTeam("memTeam")
 
-
         subTeam.color(NamedTextColor.RED)
         memTeam.color(NamedTextColor.BLUE)
+
+        subTeam.displayName(Component.text("구독자팀"))
+        memTeam.displayName(Component.text("삼극팀"))
 
         subTeam.setAllowFriendlyFire(false)
         memTeam.setAllowFriendlyFire(false)
@@ -67,6 +69,11 @@ class Battleroyal2 : JavaPlugin() {
         }
 
         logger.info("플러그인 로드 완료")
+
+        Bukkit.getScheduler().runTaskTimer(this, Runnable {
+            updatePlayerCountInSideBar()
+        }, 0L, 20L) // 0L: 바로 시작, 20L: 반복 간격(틱 단위, 1초)
+
     }
 
     override fun onDisable() {
@@ -240,6 +247,13 @@ class Battleroyal2 : JavaPlugin() {
         startCountdown(time, "자기장 축소까지") {
 
             world.worldBorder.setSize(size.toDouble(), duration.toLong())
+
+            for (player in Bukkit.getOnlinePlayers()) {
+                player.sendMessage("자기장이 축소됩니다!")
+                // 알림음 재생 (예: LEVEL_UP)
+                player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f)
+            }
+
             // duration초(마인크래프트 틱 단위로 환산) 후 다음 이벤트 실행
             startCountdown(duration, "자기장 축소중") {
                 runWorldBorderEventsSequentially(plugin, world, eventTimes, index + 1)
@@ -248,16 +262,22 @@ class Battleroyal2 : JavaPlugin() {
     }
 
     fun updatePlayerCountInSideBar() {
-        val survivalCount = Bukkit.getOnlinePlayers().count { it.gameMode == GameMode.SURVIVAL }
+
         val scoreboard = Bukkit.getScoreboardManager().newScoreboard
         val objective = scoreboard.registerNewObjective(
             "PlayerCount", // 오브젝티브 이름
             Criteria.DUMMY,  // 기준 (기존 "dummy" 대신 Enum 사용)
-            Component.text("남은 인원") // 표시 이름 (Component로 래핑)
+            Component.text("정보") // 표시 이름 (Component로 래핑)
         )
+        val memCount = Bukkit.getOnlinePlayers().count { Bukkit.getScoreboardManager().mainScoreboard.getEntryTeam(it.name) == memTeam && it.gameMode == GameMode.SURVIVAL }
+        val subCount = Bukkit.getOnlinePlayers().count { Bukkit.getScoreboardManager().mainScoreboard.getEntryTeam(it.name) == subTeam && it.gameMode == GameMode.SURVIVAL }
 
         objective.displaySlot = DisplaySlot.SIDEBAR
-        objective.getScore("남은 인원").score = survivalCount
+        objective.getScore("삼극팀 인원").score = memCount
+        objective.getScore("구독자팀 인원").score = subCount
+
+        val worldbordersize = server.worlds[0].worldBorder.size.toInt()
+        objective.getScore("자기장크기").score = worldbordersize
 
         Bukkit.getOnlinePlayers().forEach { it.scoreboard = scoreboard }
     }
@@ -266,7 +286,7 @@ class Battleroyal2 : JavaPlugin() {
     fun startGame(sender : CommandSender = server.consoleSender, worldSize : Int = 3000) {
         val world = server.getWorld("world") ?: return
 
-        isStarted = false
+        isStarted = true
 
         val baseX = -16
         val baseY = 200
@@ -284,23 +304,8 @@ class Battleroyal2 : JavaPlugin() {
         memTeam.setAllowFriendlyFire(false)
 
         world.time = 0
-        world.clearWeatherDuration = 20 * 60 * 10
-        world.weatherDuration = 20 * 60 * 10
-        world.thunderDuration = 0
-        world.isThundering = false
-
-        for (player in server.onlinePlayers) {
-            player.gameMode = GameMode.SURVIVAL
-            player.inventory.clear()
-            player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
-            player.showTitle(Title.title(
-                Component.text("배틀로얄이 시작되었습니다!"),
-                Component.text("생존을 위해 싸우세요!")
-            ))
-
-        }
-
-        updatePlayerCountInSideBar()
+        world.setStorm(false)
+        world.setThundering(false)
 
 
         world.worldBorder.size = worldSize.toDouble()
@@ -320,6 +325,20 @@ class Battleroyal2 : JavaPlugin() {
         teleportTeam(subTeam, subX, subZ, world, blockedBlocks)
         teleportTeam(memTeam, memX, memZ, world, blockedBlocks)
 
+        for (player in server.onlinePlayers) {
+            player.gameMode = GameMode.SURVIVAL
+            player.inventory.clear()
+            player.inventory.addItem(ItemStack(Material.COOKED_BEEF, 32))
+            player.showTitle(Title.title(
+                Component.text("배틀로얄이 시작되었습니다!"),
+                Component.text("생존을 위해 싸우세요!")
+            ))
+
+            player.playSound(player.location, Sound.BLOCK_BELL_USE, 1.0f, 0.5f)
+        }
+
+        updatePlayerCountInSideBar()
+
         val eventTimes = listOf(
             Triple(1080,2000,600),
             Triple(900,1000,600),
@@ -337,9 +356,12 @@ class Battleroyal2 : JavaPlugin() {
         val survivors = Bukkit.getOnlinePlayers().filter { it.gameMode == GameMode.SURVIVAL }
 
         for (player in Bukkit.getOnlinePlayers()) {
+            val displayName: Component = scoreboard.getEntryTeam(survivors[0].name)?.displayName() ?: Component.text("error")
+            val plainName: String = PlainTextComponentSerializer.plainText().serialize(displayName)
+
             player.showTitle(Title.title(
                 Component.text("게임 종료!"),
-                Component.text("#1 : ${survivors[0].name}", NamedTextColor.GOLD),
+                Component.text("#1 : ${plainName}", NamedTextColor.GOLD),
             ))
 
             player.playSound(
