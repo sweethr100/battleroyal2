@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "seml"
-version = "1.0-SNAPSHOT"
+version = "25.6.12"
 
 repositories {
     mavenCentral()
