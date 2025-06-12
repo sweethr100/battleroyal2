@@ -68,8 +68,6 @@ class BattleroyalListener(val plugin: Battleroyal2) : Listener {
         val victim = event.entity
         if (victim is Player && !plugin.isStarted) {
             event.isCancelled = true
-        } else if (victim is Player && event.cause == EntityDamageEvent.DamageCause.LAVA) {
-            event.isCancelled = true
         }
     }
 
