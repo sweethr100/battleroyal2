@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "seml"
-version = "25.7.3"
+version = "25.7.4"
 
 repositories {
     mavenCentral()
@@ -55,7 +55,7 @@ tasks.processResources {
 
 tasks.register<Copy>("copyPlugin") {
     dependsOn("shadowJar") // shadowJar가 먼저 실행되어야 함
-    from("build/libs/battleroyal2-25.7.3-all.jar") // 실제 파일명
+    from("build/libs/battleroyal2-25.7.4-all.jar") // 실제 파일명
     into("C:/Users/sweet/Desktop/MCServer/배틀로얄2/plugins") // plugins 폴더 경로
 }
 

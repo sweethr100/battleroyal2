@@ -1,5 +1,5 @@
 name: battleroyal2
-version: '25.7.3'
+version: '25.7.4'
 main: seml.battleroyal2.Battleroyal2
 api-version: '1.21'
 
