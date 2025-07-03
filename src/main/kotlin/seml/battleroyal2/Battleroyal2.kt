@@ -349,7 +349,7 @@ class Battleroyal2 : JavaPlugin() {
         runWorldBorderEventsSequentially(this, world, eventTimes)
 
 
-        sender.sendMessage("배틀로얄이 시작되었습니다! (isStarted = ${isStarted})")
+        sender.sendMessage("배틀로얄이 시작되었습니다!")
     }
 
     fun endGame() {

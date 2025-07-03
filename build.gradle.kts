@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "seml"
-version = "25.6.22"
+version = "25.7.3"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ repositories {
 
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.6-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
@@ -55,7 +55,7 @@ tasks.processResources {
 
 tasks.register<Copy>("copyPlugin") {
     dependsOn("shadowJar") // shadowJar가 먼저 실행되어야 함
-    from("build/libs/battleroyal2-25.6.22-all.jar") // 실제 파일명
+    from("build/libs/battleroyal2-25.7.3-all.jar") // 실제 파일명
     into("C:/Users/sweet/Desktop/MCServer/배틀로얄2/plugins") // plugins 폴더 경로
 }
 
