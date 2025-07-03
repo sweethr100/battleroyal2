@@ -2,6 +2,7 @@ package seml.battleroyal2
 
 import BattleroyalTabCompleter
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes.player
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
@@ -18,6 +19,7 @@ import org.bukkit.scoreboard.Scoreboard
 import org.bukkit.scoreboard.Team
 import kotlin.math.pow
 import net.kyori.adventure.title.Title
+import org.bukkit.GameRule
 import org.bukkit.SoundCategory
 import org.bukkit.boss.BarColor
 import org.bukkit.boss.BarStyle
@@ -62,10 +64,9 @@ class Battleroyal2 : JavaPlugin() {
         memTeam.setAllowFriendlyFire(false)
 
 
-
         if (!isStarted) {
             setup()
-            //makeSpawn()
+            makeSpawn()
         }
 
         logger.info("플러그인 로드 완료")
@@ -92,6 +93,8 @@ class Battleroyal2 : JavaPlugin() {
         world.difficulty = org.bukkit.Difficulty.HARD
         world.setSpawnLocation(Location(world, 0.0, 201.0, 0.0))
         world.worldBorder.center = Location(world, 0.0, 0.0, 0.0)
+
+        world.setGameRule(GameRule.LOCATOR_BAR, false)
     }
 
     fun makeSpawn() {
