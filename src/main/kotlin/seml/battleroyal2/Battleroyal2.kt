@@ -66,7 +66,7 @@ class Battleroyal2 : JavaPlugin() {
 
         if (!isStarted) {
             setup()
-            makeSpawn()
+            //makeSpawn()
         }
 
         logger.info("플러그인 로드 완료")
